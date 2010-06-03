@@ -8,23 +8,32 @@
 			import flash.net.*;
 			import mx.core.UIComponent;
 			
+			/**
+			 * Handles the connection to the streaming server.
+			 */
 			private var connection:NetConnection;
 			
 			/**
 			 * Sets up the application.
 			 */
 			private function finishLoading():void {
+				// for now we'll just make the window large enough
+				// eventually we'll spread the appication across multiple screens
 				this.height = 700;
 				this.width = 700;
 			}
 			
 			/**
-			 * Starts the connection process.  Handles the connect button.
+			 * Handles a click on the connect button.
+			 * Starts the connection process, prepares handlers for events, 
+			 * and connects to designated host.
 			 */
 			private function connect():void {
-				// create a new connection
+				// create a new connection (thus destroying previous connections/attempts)
 				connection = new NetConnection();
-				connection.addEventListener(NetStatusEvent.NET_STATUS, connectionEventHandler);
+				
+				// listen for events to happen on the connection
+				connection.addEventListener(NetStatusEvent.NET_STATUS, netStatusEventHandler);
 				connection.addEventListener(IOErrorEvent.IO_ERROR, ioEventHandler);
 				connection.addEventListener(SecurityErrorEvent.SECURITY_ERROR, securityEventHandler);
 				connection.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncEventHandler);
@@ -36,54 +45,60 @@
 				
 				// connect!
 				connection.connect(hostName.text);
-				trace("connecting...");
 			}
 			
 			/**
 			 * Handles net status events.
+			 * Plays the desired stream or prints other messages.
 			 */
-			private function connectionEventHandler(e:NetStatusEvent):void {
+			private function netStatusEventHandler(e:NetStatusEvent):void {
 				// determine what we want to do
 				switch(e.info.code) {
 					case "NetConnection.Connect.Success":
+						// we connection successfully, so connect to our desired stream
 						finishPlaying();
 						break;
 					
 					default:
 						// no handler for the type found
-						output.text = "NetStatus Event Triggered:" + e.info.code + "\n" + output.text;
+						// so just print it in the output area
+						printOutput("NetStatus Event Triggered:" + e.info.code);
 				}
 			}
 			
 			/**
 			 * Handles IO errors.
+			 * Prints the error to the output area.
 			 */
 			private function ioEventHandler(e:IOErrorEvent):void {
-				output.text = "IO Event Triggered:" + e.toString() + "\n" + output.text;
+				printOutput("IO Event Triggered:" + e.toString())
 			}
 			
 			/**
 			 * Handles security errors.
+			 * Prints the error to the output area.
 			 */
 			private function securityEventHandler(e:SecurityErrorEvent):void {
-				output.text = "Security Event Triggered:" + e.toString() + "\n" + output.text;
+				printOutput("Security Event Triggered:" + e.toString());
 			}
 			
 			/**
 			 * Handles async errors.
+			 * Prints the error to the output area.
 			 */
 			private function asyncEventHandler(e:SecurityErrorEvent):void {
-				output.text = "Security Event Triggered:" + e.toString() + "\n" + output.text;
+				printOutput("Security Event Triggered:" + e.toString());
 			}
 			
 			/**
-			 * Plays the video in a new object on the stage.
+			 * Plays the video in a new object on the stage once the connection is made.
 			 */
 			private function finishPlaying():void {
-				trace("we got here at least!");
 				// create the net stream for the video
 				var stream:NetStream = new NetStream(connection);
-				stream.addEventListener(NetStatusEvent.NET_STATUS, connectionEventHandler);
+				
+				// listen for assorted events
+				stream.addEventListener(NetStatusEvent.NET_STATUS, netStatusEventHandler);
 				stream.addEventListener(IOErrorEvent.IO_ERROR, ioEventHandler);
 				stream.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncEventHandler);
 					
@@ -101,6 +116,7 @@
 				video.smoothing = true;
 				video.width = 400;
 				video.height = 300;
+				// we'll eventually care about resizing the video after we get the separate streams
 				
 				// create an element that can actually be added as a child to hold the video
 				var uiComp:UIComponent = new UIComponent();
@@ -118,6 +134,7 @@
 			}
 			
 			/**
+			 * Handles metadata arriving on the NetStream client.
 			 * Deals with the meta-data of the stream
 			 */
 			private function metaDataHandler(meta:Object):void {
@@ -131,6 +148,7 @@
 			}
 			
 			/**
+			 * Handles other data arriving on the NetStream client.
 			 * For now, traces any other data received via the NetStream client.
 			 */
 			private function otherDataHandler(data:Object):void {
@@ -138,7 +156,8 @@
 			}
 			
 			/**
-			 * Prints object info, or recursively gets info about an object.
+			 * Helper function.
+			 * Prints object info, or recursively gets info about an object inside an object.
 			 */
 			private function printInfo(obj:*, level:int = 0, output:String = ""):* {
 				var tabs:String = "";
@@ -161,6 +180,14 @@
 				}
 				
 				return output;
+			}
+			
+			/**
+			 * Helper function.
+			 * Prints the output at the end of the events field.
+			 */
+			private function printOutput(text:String):void {
+				output.text = text + "\n" + output.text;
 			}
 		]]>
 	</mx:Script>
