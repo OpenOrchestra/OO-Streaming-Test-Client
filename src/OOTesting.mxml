@@ -193,7 +193,7 @@
 	</mx:Script>
 	
 	<mx:Panel layout="vertical" height="100%" width="100%" paddingTop="5" 
-		paddingLeft="5" paddingBottom="5" paddingRight="5">
+		paddingLeft="5" paddingBottom="5" paddingRight="6">
 		<mx:VBox width="100%">
 			<mx:HBox verticalAlign="middle" width="100%">
 				<mx:Label text="Host Name: " />
