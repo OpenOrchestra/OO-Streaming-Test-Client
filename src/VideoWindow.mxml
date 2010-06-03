@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Window xmlns:s="spark.components.*" 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	width="600" height="600" windowComplete="fixPosition()">
+	
+	<mx:Script>
+		<![CDATA[
+			[Bindable]
+			public var number:int = -1;
+			
+			[Bindable]
+			public var myScreen:Screen;
+			
+			private function fixPosition():void {
+				if(myScreen) {
+					// move to this screen's bounds
+					this.nativeWindow.bounds = myScreen.bounds;
+					
+					// remove chrome
+					this.systemChrome = NativeWindowSystemChrome.NONE;
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<s:Panel width="100%" height="100%">
+		<s:Label text="TESTING" fontSize="36" />
+	</s:Panel>
+	
+</s:Window>

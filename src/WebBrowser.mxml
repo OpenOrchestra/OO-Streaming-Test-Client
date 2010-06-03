@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute" applicationComplete="loadWindows()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.core.FlexGlobals;
+			import spark.components.Application;
+			import mx.controls.Alert;
+			
+			public var videoWindows:Array;
+			
+			private function loadWindows():void {
+				videoWindows = new Array();
+				
+				// loop through each screen except the last (the main control window)
+				if(Screen.screens.length > 1) {
+					for(var i:int=1; i < Screen.screens.length; i++) {
+						// get this screen
+						var current:Screen = Screen.screens[i];
+						
+						// create a new window and add it to the collection
+						var vidWindow:VideoWindow = new VideoWindow();
+						videoWindows.push(vidWindow);
+						vidWindow.myScreen = current;
+						vidWindow.number = i;
+						
+						// open the window
+						vidWindow.open(true);
+					}
+				}
+				
+				//this.stage.displayState = StageDisplayState.FULL_SCREEN_INTERACTIVE;
+			}
+			
+			private function onClick(event:Event):void {
+				if(event.currentTarget == urlButton){
+					myHTML.location = urlTextInput.text;
+				} else if(event.currentTarget == backButton){
+					myHTML.historyBack();
+				} else if(event.currentTarget == forwardButton){
+					myHTML.historyForward();
+				} else {
+					//DO NOTHING!!!
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:ApplicationControlBar width="100%">
+		<mx:VBox width="100%">
+			<mx:HBox width="100%">
+			<mx:Button id="backButton" label="&lt;" fontWeight="bold"
+				click="onClick(event)"/>
+				<mx:Button id="forwardButton" label=">" fontWeight="bold"
+					click="onClick(event)"/>
+				<mx:Label text="URL:" fontWeight="bold"/>
+				<mx:TextInput id="urlTextInput" text="{myHTML.location}" width="235"/>
+				<mx:Button id="urlButton" label="OK"
+					click="onClick(event)"/>
+			</mx:HBox>
+		</mx:VBox>
+	</mx:ApplicationControlBar>
+	
+	<mx:HTML id="myHTML" location="http://me.com" width="100%" height="100%"/> 
+
+</mx:WindowedApplication>

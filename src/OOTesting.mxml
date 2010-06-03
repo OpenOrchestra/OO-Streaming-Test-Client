@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="absolute" width="100%" height="100%"
+	showStatusBar="false" applicationComplete="finishLoading()">
+	
+	<mx:Script>
+		<![CDATA[
+			import flash.net.*;
+			import mx.core.UIComponent;
+			
+			private var connection:NetConnection;
+			
+			/**
+			 * Sets up the application.
+			 */
+			private function finishLoading():void {
+				this.height = 700;
+				this.width = 700;
+			}
+			
+			/**
+			 * Starts the connection process.  Handles the connect button.
+			 */
+			private function connect():void {
+				// create a new connection
+				connection = new NetConnection();
+				connection.addEventListener(NetStatusEvent.NET_STATUS, connectionEventHandler);
+				connection.addEventListener(IOErrorEvent.IO_ERROR, ioEventHandler);
+				connection.addEventListener(SecurityErrorEvent.SECURITY_ERROR, securityEventHandler);
+				connection.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncEventHandler);
+				
+				// create the connection client and add the required handlers
+				var connectionClient:Object = new Object();
+				connectionClient.onBWDone = function():void {};
+				connection.client = connectionClient;
+				
+				// connect!
+				connection.connect(hostName.text);
+				trace("connecting...");
+			}
+			
+			/**
+			 * Handles net status events.
+			 */
+			private function connectionEventHandler(e:NetStatusEvent):void {
+				// determine what we want to do
+				switch(e.info.code) {
+					case "NetConnection.Connect.Success":
+						finishPlaying();
+						break;
+					
+					default:
+						// no handler for the type found
+						output.text = "NetStatus Event Triggered:" + e.info.code + "\n" + output.text;
+				}
+			}
+			
+			/**
+			 * Handles IO errors.
+			 */
+			private function ioEventHandler(e:IOErrorEvent):void {
+				output.text = "IO Event Triggered:" + e.toString() + "\n" + output.text;
+			}
+			
+			/**
+			 * Handles security errors.
+			 */
+			private function securityEventHandler(e:SecurityErrorEvent):void {
+				output.text = "Security Event Triggered:" + e.toString() + "\n" + output.text;
+			}
+			
+			/**
+			 * Handles async errors.
+			 */
+			private function asyncEventHandler(e:SecurityErrorEvent):void {
+				output.text = "Security Event Triggered:" + e.toString() + "\n" + output.text;
+			}
+			
+			/**
+			 * Plays the video in a new object on the stage.
+			 */
+			private function finishPlaying():void {
+				trace("we got here at least!");
+				// create the net stream for the video
+				var stream:NetStream = new NetStream(connection);
+				stream.addEventListener(NetStatusEvent.NET_STATUS, connectionEventHandler);
+				stream.addEventListener(IOErrorEvent.IO_ERROR, ioEventHandler);
+				stream.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncEventHandler);
+					
+				// setup the stream's client to handle meta data (and other data for testing)
+				var streamClient:Object = new Object();
+				streamClient.onMetaData = metaDataHandler;
+				streamClient.onCuePoint = otherDataHandler;
+				streamClient.onImageData = otherDataHandler;
+				streamClient.onPlayStatus = otherDataHandler;
+				streamClient.onTextData = otherDataHandler;
+				stream.client = streamClient;
+				
+				// create the actual video element to hold the item
+				var video:Video = new Video(400, 300);
+				video.smoothing = true;
+				video.width = 400;
+				video.height = 300;
+				
+				// create an element that can actually be added as a child to hold the video
+				var uiComp:UIComponent = new UIComponent();
+				uiComp.addChild(video);
+				uiComp.width = 400;
+				uiComp.height = 300;
+				
+				// play the video
+				stream.play(streamName.text);
+				video.attachNetStream(stream);
+				
+				// add it to the stage
+				videoPlayerPanel.removeAllChildren();
+				videoPlayerPanel.addChild(uiComp);
+			}
+			
+			/**
+			 * Deals with the meta-data of the stream
+			 */
+			private function metaDataHandler(meta:Object):void {
+				// separate this from the last set of data
+				if(metadata.text != "") {
+					metadata.text = "\n--------------------------\n\n" + metadata.text;
+				}
+				
+				// print info about the meta object
+				metadata.text = printInfo(meta) + metadata.text;
+			}
+			
+			/**
+			 * For now, traces any other data received via the NetStream client.
+			 */
+			private function otherDataHandler(data:Object):void {
+				trace("\n-------------------------\n" + printInfo(data) + "\n-------------------------\n");
+			}
+			
+			/**
+			 * Prints object info, or recursively gets info about an object.
+			 */
+			private function printInfo(obj:*, level:int = 0, output:String = ""):* {
+				var tabs:String = "";
+				
+				// tab the proper amount for our level
+				for(var i:int = 0; i < level; i++, tabs += "\t");
+				
+				// loop through everything in the object
+				for(var child:* in obj) {
+					// print the name and it's info
+					output += tabs +"["+ child +"] => "+ obj[child];
+					
+					// print child information (if there is any)
+					var childOutput:String = printInfo(obj[child], level+1);
+					if(childOutput != '') {
+						output += ' {\n'+ childOutput + tabs +'}';
+					}
+					
+					output += "\n";
+				}
+				
+				return output;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Panel layout="vertical" height="100%" width="100%" paddingTop="5" 
+		paddingLeft="5" paddingBottom="5" paddingRight="5">
+		<mx:VBox width="100%">
+			<mx:HBox verticalAlign="middle" width="100%">
+				<mx:Label text="Host Name: " />
+				<mx:TextInput id="hostName" text="rtmp://fmsexamples.adobe.com/vod/" width="100%" />
+			</mx:HBox>
+			<mx:HBox verticalAlign="middle" width="100%">
+				<mx:Label text="      Stream:" />
+				<mx:TextInput id="streamName" text="mp4:_cs4promo_1000.f4v" width="100%" />
+			</mx:HBox>
+			<mx:Button label="Connect..." click="connect()" />
+		</mx:VBox>
+		
+		<mx:VBox id="videoPlayerPanel" width="100%" height="100%">
+			<mx:Label text="Enter the information above." />
+		</mx:VBox>
+		
+		<mx:HBox width="100%">
+			<mx:VBox width="50%">
+				<mx:Label text="Events (newest at top):" />
+				<mx:TextArea id="output" editable="false" width="100%" height="200" />
+			</mx:VBox>
+			<mx:VBox width="50%">
+				<mx:Label text="Meta Data (newest at top):" />
+				<mx:TextArea id="metadata" editable="false" width="100%" height="200" />
+			</mx:VBox>
+		</mx:HBox>
+		
+	</mx:Panel>
+</mx:WindowedApplication>
